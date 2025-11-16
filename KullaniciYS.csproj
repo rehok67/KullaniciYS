@@ -93,6 +93,7 @@
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
     <Compile Include="Controllers\RolesController.cs" />
+    <Compile Include="Controllers\TasksController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Data\AppDbContext.cs" />
     <Compile Include="Global.asax.cs">
@@ -101,9 +102,11 @@
     <Compile Include="Models\DTOs\DashboardStatsDto.cs" />
     <Compile Include="Models\DTOs\LoginDto.cs" />
     <Compile Include="Models\DTOs\RegisterDto.cs" />
+    <Compile Include="Models\DTOs\UserTaskDto.cs" />
     <Compile Include="Models\DTOs\UserDto.cs" />
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Models\UserTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\AuthService.cs" />
   </ItemGroup>

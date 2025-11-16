@@ -1,4 +1,5 @@
 using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Web.Http;
 using KullaniciYS.Data;
@@ -11,6 +12,58 @@ namespace KullaniciYS.Controllers
     [RoutePrefix("api/users")]
     public class UsersController : ApiController
     {
+        // GET: api/users/managed-by/{managerId}
+        [HttpGet]
+        [Route("managed-by/{managerId:int}")]
+        public IHttpActionResult GetUsersManagedBy(int managerId)
+        {
+            using (var db = new AppDbContext())
+            {
+                var manager = db.Users
+                    .Include(u => u.Roles)
+                    .FirstOrDefault(u => u.Id == managerId);
+
+                if (manager == null)
+                {
+                    return NotFound();
+                }
+
+                var isManager = manager.Roles.Any(r => r.Name == "Manager" || r.Name == "Admin");
+                if (!isManager)
+                {
+                    return BadRequest("Bu kullanıcı yönetici yetkisine sahip değildir.");
+                }
+
+                var users = db.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.Manager)
+                    .Where(u => u.ManagerId == managerId)
+                    .ToList()
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        UserName = u.UserName,
+                        Email = u.Email,
+                        FullName = u.FullName,
+                        Phone = u.Phone,
+                        Department = u.Department,
+                        IsActive = u.IsActive,
+                        CreatedDate = u.CreatedDate,
+                        LastLoginDate = u.LastLoginDate,
+                        ManagerId = u.ManagerId,
+                        ManagerName = manager.FullName ?? manager.UserName,
+                        Roles = u.Roles.Select(r => new RoleDto
+                        {
+                            Id = r.Id,
+                            Name = r.Name,
+                            Description = r.Description
+                        }).ToList()
+                    }).ToList();
+
+                return Ok(users);
+            }
+        }
+
         // GET: api/users
         [HttpGet]
         [Route("")]
@@ -18,7 +71,10 @@ namespace KullaniciYS.Controllers
         {
             using (var db = new AppDbContext())
             {
-                var query = db.Users.Include("Roles").AsQueryable();
+                var query = db.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.Manager)
+                    .AsQueryable();
 
                 // Search filter
                 if (!string.IsNullOrEmpty(search))
@@ -52,6 +108,10 @@ namespace KullaniciYS.Controllers
                     IsActive = u.IsActive,
                     CreatedDate = u.CreatedDate,
                     LastLoginDate = u.LastLoginDate,
+                    ManagerId = u.ManagerId,
+                    ManagerName = u.Manager != null
+                        ? (!string.IsNullOrWhiteSpace(u.Manager.FullName) ? u.Manager.FullName : u.Manager.UserName)
+                        : null,
                     Roles = u.Roles.Select(r => new RoleDto
                     {
                         Id = r.Id,
@@ -71,7 +131,10 @@ namespace KullaniciYS.Controllers
         {
             using (var db = new AppDbContext())
             {
-                var user = db.Users.Include("Roles").FirstOrDefault(u => u.Id == id);
+                var user = db.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.Manager)
+                    .FirstOrDefault(u => u.Id == id);
 
                 if (user == null)
                 {
@@ -89,6 +152,10 @@ namespace KullaniciYS.Controllers
                     IsActive = user.IsActive,
                     CreatedDate = user.CreatedDate,
                     LastLoginDate = user.LastLoginDate,
+                    ManagerId = user.ManagerId,
+                    ManagerName = user.Manager != null
+                        ? (!string.IsNullOrWhiteSpace(user.Manager.FullName) ? user.Manager.FullName : user.Manager.UserName)
+                        : null,
                     Roles = user.Roles.Select(r => new RoleDto
                     {
                         Id = r.Id,
@@ -134,6 +201,30 @@ namespace KullaniciYS.Controllers
                     IsActive = true
                 };
 
+                if (userDto.ManagerId.HasValue)
+                {
+                    var manager = db.Users
+                        .Include(u => u.Roles)
+                        .FirstOrDefault(u => u.Id == userDto.ManagerId.Value);
+
+                    if (manager == null || !manager.Roles.Any(r => r.Name == "Manager" || r.Name == "Admin"))
+                    {
+                        return BadRequest("Geçerli bir yönetici seçmelisiniz.");
+                    }
+
+                    user.ManagerId = manager.Id;
+                }
+                else
+                {
+                    return BadRequest("Kullanıcının bağlı olacağı bir yönetici seçmelisiniz.");
+                }
+
+                var defaultRole = db.Roles.FirstOrDefault(r => r.Name == "User");
+                if (defaultRole != null)
+                {
+                    user.Roles.Add(defaultRole);
+                }
+
                 db.Users.Add(user);
                 db.SaveChanges();
 
@@ -153,7 +244,9 @@ namespace KullaniciYS.Controllers
 
             using (var db = new AppDbContext())
             {
-                var user = db.Users.Include("Roles").FirstOrDefault(u => u.Id == id);
+                var user = db.Users
+                    .Include(u => u.Roles)
+                    .FirstOrDefault(u => u.Id == id);
 
                 if (user == null)
                 {
@@ -176,6 +269,35 @@ namespace KullaniciYS.Controllers
                     {
                         user.Roles.Add(role);
                     }
+                }
+
+                if (updateDto.ManagerId.HasValue)
+                {
+                    if (updateDto.ManagerId.Value == user.Id)
+                    {
+                        return BadRequest("Bir kullanıcı kendisinin yöneticisi olamaz.");
+                    }
+
+                    var manager = db.Users
+                        .Include(u => u.Roles)
+                        .FirstOrDefault(u => u.Id == updateDto.ManagerId.Value);
+
+                    if (manager == null || !manager.Roles.Any(r => r.Name == "Manager" || r.Name == "Admin"))
+                    {
+                        return BadRequest("Geçerli bir yönetici seçmelisiniz.");
+                    }
+
+                    user.ManagerId = manager.Id;
+                }
+                else
+                {
+                    var hasUserRole = user.Roles.Any(r => r.Name == "User");
+                    if (hasUserRole)
+                    {
+                        return BadRequest("User rolündeki kullanıcılar için yönetici seçilmelidir.");
+                    }
+
+                    user.ManagerId = null;
                 }
 
                 db.SaveChanges();

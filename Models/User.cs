@@ -37,14 +37,23 @@ namespace KullaniciYS.Models
 
         public DateTime? LastLoginDate { get; set; }
 
+        public int? ManagerId { get; set; }
+
+        [ForeignKey("ManagerId")]
+        public virtual User Manager { get; set; }
+
         // Navigation property
         public virtual ICollection<Role> Roles { get; set; }
+        public virtual ICollection<UserTaskAssignment> TaskAssignments { get; set; }
+        public virtual ICollection<User> ManagedUsers { get; set; }
 
         public User()
         {
             IsActive = true;
             CreatedDate = DateTime.Now;
             Roles = new HashSet<Role>();
+            TaskAssignments = new HashSet<UserTaskAssignment>();
+            ManagedUsers = new HashSet<User>();
         }
     }
 }

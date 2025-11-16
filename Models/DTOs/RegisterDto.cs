@@ -25,5 +25,7 @@ namespace KullaniciYS.Models.DTOs
 
         [StringLength(100)]
         public string Department { get; set; }
+
+        public int? ManagerId { get; set; }
     }
 }

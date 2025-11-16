@@ -14,6 +14,8 @@ namespace KullaniciYS.Models.DTOs
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
+        public int? ManagerId { get; set; }
+        public string ManagerName { get; set; }
         public List<RoleDto> Roles { get; set; }
     }
 
@@ -32,5 +34,6 @@ namespace KullaniciYS.Models.DTOs
         public string Department { get; set; }
         public bool IsActive { get; set; }
         public List<int> RoleIds { get; set; }
+        public int? ManagerId { get; set; }
     }
 }

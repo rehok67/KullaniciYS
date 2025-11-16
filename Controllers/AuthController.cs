@@ -1,3 +1,4 @@
+using System.Data.Entity;
 using System.Linq;
 using System.Web.Http;
 using KullaniciYS.Data;
@@ -43,6 +44,10 @@ namespace KullaniciYS.Controllers
                 IsActive = user.IsActive,
                 CreatedDate = user.CreatedDate,
                 LastLoginDate = user.LastLoginDate,
+                ManagerId = user.ManagerId,
+                ManagerName = user.Manager != null
+                    ? (!string.IsNullOrWhiteSpace(user.Manager.FullName) ? user.Manager.FullName : user.Manager.UserName)
+                    : null,
                 Roles = user.Roles.Select(r => new RoleDto
                 {
                     Id = r.Id,
@@ -92,6 +97,35 @@ namespace KullaniciYS.Controllers
                     Department = registerDto.Department,
                     IsActive = true
                 };
+
+                if (registerDto.ManagerId.HasValue)
+                {
+                    var manager = db.Users
+                        .Include(u => u.Roles)
+                        .FirstOrDefault(u => u.Id == registerDto.ManagerId.Value);
+
+                    if (manager == null || !manager.Roles.Any(r => r.Name == "Manager"))
+                    {
+                        return BadRequest("Geçerli bir yönetici seçmelisiniz.");
+                    }
+
+                    user.ManagerId = manager.Id;
+                }
+                else
+                {
+                    var managerRole = db.Roles.FirstOrDefault(r => r.Name == "Manager");
+                    if (managerRole != null)
+                    {
+                        var defaultManager = db.Users
+                            .Include(u => u.Roles)
+                            .FirstOrDefault(u => u.Roles.Any(r => r.Id == managerRole.Id));
+
+                        if (defaultManager != null)
+                        {
+                            user.ManagerId = defaultManager.Id;
+                        }
+                    }
+                }
 
                 // Assign default "User" role
                 var userRole = db.Roles.FirstOrDefault(r => r.Name == "User");

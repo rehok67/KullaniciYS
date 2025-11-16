@@ -1,4 +1,5 @@
 using System;
+using System.Data.Entity;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,7 +35,10 @@ namespace KullaniciYS.Services
         {
             using (var db = new AppDbContext())
             {
-                var user = db.Users.Include("Roles").FirstOrDefault(u => u.UserName == username);
+                var user = db.Users
+                    .Include(u => u.Roles)
+                    .Include(u => u.Manager)
+                    .FirstOrDefault(u => u.UserName == username);
 
                 if (user != null && VerifyPassword(password, user.PasswordHash) && user.IsActive)
                 {
