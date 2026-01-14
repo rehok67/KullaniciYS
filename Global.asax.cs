@@ -1,4 +1,4 @@
-using System.Web;
+﻿using System.Web;
 using System.Web.Http;
 
 namespace KullaniciYS
@@ -8,6 +8,7 @@ namespace KullaniciYS
         protected void Application_Start()
         {
             GlobalConfiguration.Configure(WebApiConfig.Register);
+            SwaggerConfig.Register();
         }
     }
 }
