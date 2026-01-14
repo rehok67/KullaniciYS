@@ -1,5 +1,10 @@
 # Kullanıcı Yönetim Sistemi - Full Stack Projesi
 
+# Video Linki (Hocam mikrofon bozuk olduğu icin sesi kisik cikmis):
+https://drive.google.com/file/d/1FCxxWfUmi7Hh2UZ58_YcETTwm3cp_3s4/view?usp=sharing
+
+
+
 ASP.NET Web API (.NET Framework 4.7.2) backend ve React (Vite) frontend ile geliştirilmiş full-stack kullanıcı ve görev yönetim sistemi.
 
 ## 🎯 Proje Özeti
